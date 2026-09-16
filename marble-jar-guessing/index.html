@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marble jar: your row and your code</title>
+<meta name="description" content="Two numbers in, one row and one code out, for the marble jar guessing round.">
+<meta name="robots" content="noindex">
+<style>
+:root {
+  --paper:      #FBF8F2;
+  --ink:        #23201D;
+  --brand:      #26456E;
+  --sepia:      #8A6D3B;
+  --blue:       #0072B2;   /* Okabe-Ito blue */
+  --vermillion: #D55E00;   /* Okabe-Ito vermillion, the only alert colour here */
+  --rule:       rgba(138, 109, 59, 0.35);
+  --grid:       rgba(138, 109, 59, 0.10);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  padding: 0 16px 56px;
+  background-color: var(--paper);
+  background-image:
+    repeating-linear-gradient(to right,  var(--grid) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(to bottom, var(--grid) 0 1px, transparent 1px 24px);
+  color: var(--ink);
+  font-family: Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-size: 17px;
+  line-height: 1.5;
+}
+main { max-width: 34rem; margin: 0 auto; }
+header { border-bottom: 2px solid var(--rule); padding: 22px 0 12px; margin-bottom: 20px; }
+h1 { font-size: 1.5rem; line-height: 1.25; margin: 0 0 6px; color: var(--brand); }
+.sub { margin: 0; color: var(--sepia); font-size: 0.95rem; }
+h2 { font-size: 1.05rem; margin: 26px 0 8px; color: var(--brand); }
+p { margin: 0 0 12px; }
+.card {
+  background: #FFFDF8;
+  border: 1px solid var(--rule);
+  border-left: 5px solid var(--brand);
+  padding: 16px 16px 18px;
+  margin-bottom: 22px;
+}
+label { display: block; font-weight: bold; margin-bottom: 4px; }
+.hint { display: block; font-weight: normal; color: var(--sepia); font-size: 0.9rem; margin-bottom: 8px; }
+input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  font-family: "SF Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  font-size: 1.7rem;
+  letter-spacing: 0.35em;
+  text-align: center;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--sepia);
+  border-radius: 2px;
+}
+input[type="text"]:focus { outline: 3px solid var(--blue); outline-offset: 1px; }
+input.bad { border-color: var(--vermillion); }
+.field { margin-bottom: 18px; }
+.err { color: var(--vermillion); font-size: 0.95rem; margin: 6px 0 0; min-height: 1px; }
+button {
+  width: 100%;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-size: 1.15rem;
+  color: var(--paper);
+  background: var(--brand);
+  border: 2px solid var(--brand);
+  border-radius: 2px;
+  cursor: pointer;
+}
+button:active { background: var(--blue); border-color: var(--blue); }
+#result { display: none; }
+#result.on { display: block; }
+.answer { display: flex; gap: 14px; margin: 2px 0 14px; }
+.slot { flex: 1 1 0; border: 2px solid var(--blue); background: var(--paper); padding: 10px 6px 12px; text-align: center; }
+.slot .k { display: block; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sepia); }
+.slot .v {
+  display: block;
+  font-family: "SF Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  font-size: 2.6rem;
+  line-height: 1.15;
+  color: var(--blue);
+}
+.slot .v.code { letter-spacing: 0.12em; font-size: 2.2rem; }
+ol, ul { margin: 0 0 12px; padding-left: 1.3em; }
+li { margin-bottom: 7px; }
+.note { border-top: 1px solid var(--rule); padding-top: 14px; color: var(--sepia); font-size: 0.93rem; }
+.sheetlink { display: none; }
+.sheetlink.on { display: block; }
+.sheetlink a {
+  display: block; text-align: center; padding: 13px 16px; margin-bottom: 14px;
+  color: var(--paper); background: var(--blue); border: 2px solid var(--blue); text-decoration: none;
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>How many marbles are in the jar?</h1>
+    <p class="sub">Two numbers in, one row and one code out.</p>
+  </header>
+
+  <form class="card" id="form" novalidate>
+    <div class="field">
+      <label for="ddmm">Day and month of your birthday</label>
+      <span class="hint">Four digits, day first. 7 March is 0703.</span>
+      <input type="text" id="ddmm" name="ddmm" inputmode="numeric" pattern="[0-9]*"
+             maxlength="4" autocomplete="off" autocapitalize="off" spellcheck="false"
+             placeholder="DDMM" aria-describedby="ddmm-err">
+      <p class="err" id="ddmm-err" role="alert"></p>
+    </div>
+    <div class="field">
+      <label for="ppp">Last three digits of your mobile number</label>
+      <span class="hint">Three digits. They stay on your phone. Any three you will
+         remember will do.</span>
+      <input type="text" id="ppp" name="ppp" inputmode="numeric" pattern="[0-9]*"
+             maxlength="3" autocomplete="off" autocapitalize="off" spellcheck="false"
+             placeholder="PPP" aria-describedby="ppp-err">
+      <p class="err" id="ppp-err" role="alert"></p>
+    </div>
+    <button type="submit" id="go">Show my row and my code</button>
+  </form>
+
+  <section id="result" aria-live="polite">
+    <div class="card">
+      <div class="answer">
+        <div class="slot"><span class="k">Row</span><span class="v" id="row-out">--</span></div>
+        <div class="slot"><span class="k">Code</span><span class="v code" id="code-out">----</span></div>
+      </div>
+      <div class="sheetlink" id="sheetlink"><a id="sheeta" href="#" target="_blank"
+           rel="noopener">Open the shared sheet</a></div>
+      <ol>
+        <li>Open the shared sheet and scroll to row <strong id="row-inline">--</strong>. It is
+            the row Google Sheets numbers <strong id="row-inline2">--</strong> in the grey
+            margin, and column A says so too.</li>
+        <li>Type <strong id="code-inline">----</strong> in the code column.</li>
+        <li>Type your guess, a whole number, in the guess column.</li>
+      </ol>
+      <p><strong>If that row already holds a different code</strong>, take the next empty row
+         down, and carry on from row 6 after row 105. Write your code there.</p>
+      <p>Come back any time: the same two numbers always give you the same row and the same
+         code, so you change your own guess instead of adding a second one.</p>
+    </div>
+  </section>
+
+  <section class="note">
+    <h2>What this does with your two numbers</h2>
+    <p>It mixes them into one number and reads a row and four letters off it, here on your
+       phone. Nothing is sent anywhere, this page has no network connection of its own, and
+       the sheet only ever holds a four letter code and a number of marbles. Many birthdays
+       lead to the same row, so a row says nothing about who you are.</p>
+  </section>
+</main>
+
+<script>
+// >>>>> HASH CORE START >>>>>
+// Mirrored by marblehash.py. test_cross_impl.py lifts everything between these two
+// markers out of this file, runs it in node, and compares it with Python on every one
+// of the 366000 possible inputs. Edit this block and that file together, never one alone.
+var SALT = "FAI-HS26-MARBLES";
+var ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ";   /* A to Z without I, L, O. 23, and no digits */
+var ROWS = 100;
+var FIRST_ROW = 6;                          /* the sheet's five header rows sit above */
+var CODE_LEN = 4;
+var DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function fnv1a32(text) {
+  var h = 0x811C9DC5;
+  for (var i = 0; i < text.length; i++) {
+    h = (h ^ text.charCodeAt(i)) >>> 0;
+    h = Math.imul(h, 0x01000193) >>> 0;     /* Math.imul keeps the multiply inside 32 bits */
+  }
+  return h >>> 0;
+}
+
+function normalise(ddmm, ppp) {
+  return SALT + "|" + ddmm + "|" + ppp;
+}
+
+function ddmmIsValid(ddmm) {
+  if (!/^[0-9]{4}$/.test(ddmm)) { return false; }
+  var day = parseInt(ddmm.slice(0, 2), 10);
+  var month = parseInt(ddmm.slice(2), 10);
+  if (month < 1 || month > 12) { return false; }
+  return day >= 1 && day <= DAYS_IN_MONTH[month - 1];
+}
+
+function pppIsValid(ppp) {
+  return /^[0-9]{3}$/.test(ppp);
+}
+
+function assign(ddmm, ppp) {
+  var h = fnv1a32(normalise(ddmm, ppp));
+  var row = FIRST_ROW + (h % ROWS);
+  var q = Math.floor(h / ROWS);
+  var code = "";
+  for (var i = 0; i < CODE_LEN; i++) {
+    code = ALPHABET.charAt(q % ALPHABET.length) + code;
+    q = Math.floor(q / ALPHABET.length);
+  }
+  return { row: row, code: code };
+}
+// <<<<< HASH CORE END <<<<<
+
+/* Paste the shared sheet link between the quotes to put a button on the page.
+   Left empty, the button stays hidden and the sheet is reached from the screen. */
+var SHEET_URL = "";
+
+(function () {
+  var form = document.getElementById("form");
+  var ddmmEl = document.getElementById("ddmm");
+  var pppEl = document.getElementById("ppp");
+  var ddmmErr = document.getElementById("ddmm-err");
+  var pppErr = document.getElementById("ppp-err");
+  var result = document.getElementById("result");
+
+  function clean(s) { return s.replace(/[^0-9]/g, ""); }
+
+  function show(el, errEl, message) {
+    errEl.textContent = message;
+    if (message) { el.classList.add("bad"); } else { el.classList.remove("bad"); }
+  }
+
+  function check() {
+    var ddmm = clean(ddmmEl.value);
+    var ppp = clean(pppEl.value);
+    var ok = true;
+
+    if (ddmm.length === 0) {
+      show(ddmmEl, ddmmErr, "Type the day and month of your birthday, four digits.");
+      ok = false;
+    } else if (ddmm.length !== 4) {
+      show(ddmmEl, ddmmErr, "Four digits please, day first. 7 March is 0703.");
+      ok = false;
+    } else if (!ddmmIsValid(ddmm)) {
+      show(ddmmEl, ddmmErr, "That day and month do not exist. 29 February is fine, 30 February is not.");
+      ok = false;
+    } else {
+      show(ddmmEl, ddmmErr, "");
+    }
+
+    if (ppp.length === 0) {
+      show(pppEl, pppErr, "Type the last three digits of your mobile number.");
+      ok = false;
+    } else if (!pppIsValid(ppp)) {
+      show(pppEl, pppErr, "Three digits please, the last three of the number.");
+      ok = false;
+    } else {
+      show(pppEl, pppErr, "");
+    }
+
+    if (!ok) {
+      result.classList.remove("on");
+      return;
+    }
+
+    var out = assign(ddmm, ppp);
+    document.getElementById("row-out").textContent = String(out.row);
+    document.getElementById("code-out").textContent = out.code;
+    document.getElementById("row-inline").textContent = String(out.row);
+    document.getElementById("row-inline2").textContent = String(out.row);
+    document.getElementById("code-inline").textContent = out.code;
+    result.classList.add("on");
+  }
+
+  form.addEventListener("submit", function (ev) { ev.preventDefault(); check(); });
+
+  /* While somebody is still typing, clear the complaint rather than repeat it. */
+  [[ddmmEl, ddmmErr], [pppEl, pppErr]].forEach(function (pair) {
+    pair[0].addEventListener("input", function () { show(pair[0], pair[1], ""); });
+  });
+
+  if (SHEET_URL) {
+    document.getElementById("sheeta").href = SHEET_URL;
+    document.getElementById("sheetlink").classList.add("on");
+  }
+})();
+</script>
+</body>
+</html>
