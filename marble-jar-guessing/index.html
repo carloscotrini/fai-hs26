@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marble jar: your row and your code</title>
-<meta name="description" content="Two numbers in, one row and one code out, for the marble jar guessing round.">
+<meta name="description" content="Nothing to type. The page draws four letters and hands back the row to write your guess in.">
 <meta name="robots" content="noindex">
 <style>
 :root {
@@ -44,6 +44,7 @@ p { margin: 0 0 12px; }
   padding: 16px 16px 18px;
   margin-bottom: 22px;
 }
+.card.quiet { border-left-color: var(--sepia); }
 label { display: block; font-weight: bold; margin-bottom: 4px; }
 .hint { display: block; font-weight: normal; color: var(--sepia); font-size: 0.9rem; margin-bottom: 8px; }
 input[type="text"] {
@@ -53,6 +54,7 @@ input[type="text"] {
   font-size: 1.7rem;
   letter-spacing: 0.35em;
   text-align: center;
+  text-transform: uppercase;
   color: var(--ink);
   background: var(--paper);
   border: 2px solid var(--sepia);
@@ -74,6 +76,15 @@ button {
   cursor: pointer;
 }
 button:active { background: var(--blue); border-color: var(--blue); }
+button.minor {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  color: var(--sepia);
+  background: transparent;
+  border: 1px solid var(--rule);
+}
+button.minor:active { color: var(--paper); background: var(--sepia); border-color: var(--sepia); }
 #result { display: none; }
 #result.on { display: block; }
 .answer { display: flex; gap: 14px; margin: 2px 0 14px; }
@@ -102,29 +113,8 @@ li { margin-bottom: 7px; }
 <main>
   <header>
     <h1>How many marbles are in the jar?</h1>
-    <p class="sub">Two numbers in, one row and one code out.</p>
+    <p class="sub">Nothing to type. Here are your row and your code.</p>
   </header>
-
-  <form class="card" id="form" novalidate>
-    <div class="field">
-      <label for="ddmm">Day and month of your birthday</label>
-      <span class="hint">Four digits, day first. 7 March is 0703.</span>
-      <input type="text" id="ddmm" name="ddmm" inputmode="numeric" pattern="[0-9]*"
-             maxlength="4" autocomplete="off" autocapitalize="off" spellcheck="false"
-             placeholder="DDMM" aria-describedby="ddmm-err">
-      <p class="err" id="ddmm-err" role="alert"></p>
-    </div>
-    <div class="field">
-      <label for="ppp">Last three digits of your mobile number</label>
-      <span class="hint">Three digits. They stay on your phone. Any three you will
-         remember will do.</span>
-      <input type="text" id="ppp" name="ppp" inputmode="numeric" pattern="[0-9]*"
-             maxlength="3" autocomplete="off" autocapitalize="off" spellcheck="false"
-             placeholder="PPP" aria-describedby="ppp-err">
-      <p class="err" id="ppp-err" role="alert"></p>
-    </div>
-    <button type="submit" id="go">Show my row and my code</button>
-  </form>
 
   <section id="result" aria-live="polite">
     <div class="card">
@@ -143,17 +133,36 @@ li { margin-bottom: 7px; }
       </ol>
       <p><strong>If that row already holds a different code</strong>, take the next empty row
          down, and carry on from row 6 after row 105. Write your code there.</p>
-      <p>Come back any time: the same two numbers always give you the same row and the same
-         code, so you change your own guess instead of adding a second one.</p>
+      <p>Come back any time: this page remembers your four letters, and those four letters
+         always lead to the same row, so you change your own guess instead of adding a second
+         one.</p>
     </div>
   </section>
 
+  <section>
+    <form class="card quiet" id="form" novalidate>
+      <div class="field">
+        <label for="code-in">Been here before, or on another phone?</label>
+        <span class="hint">Type the four letters you already wrote into the sheet and this
+           page will send you back to the same row.</span>
+        <input type="text" id="code-in" name="code-in" inputmode="text"
+               maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false"
+               autocorrect="off" placeholder="CODE" aria-describedby="code-err">
+        <p class="err" id="code-err" role="alert"></p>
+      </div>
+      <button type="submit" id="go">Use this code</button>
+      <button type="button" id="redraw" class="minor">If the sheet says your code is a
+         duplicate, draw a new one</button>
+    </form>
+  </section>
+
   <section class="note">
-    <h2>What this does with your two numbers</h2>
-    <p>It mixes them into one number and reads a row and four letters off it, here on your
-       phone. Nothing is sent anywhere, this page has no network connection of its own, and
-       the sheet only ever holds a four letter code and a number of marbles. Many birthdays
-       lead to the same row, so a row says nothing about who you are.</p>
+    <h2>What this page knows about you</h2>
+    <p>Nothing, and it asks you for nothing. It picks four letters at random on your phone,
+       mixes them into one number and reads a row off that number. Nothing is sent anywhere,
+       this page has no network connection of its own, and the sheet only ever holds four
+       letters and a number of marbles. Many codes lead to the same row, so a row says
+       nothing about who you are.</p>
   </section>
 </main>
 
@@ -161,13 +170,12 @@ li { margin-bottom: 7px; }
 // >>>>> HASH CORE START >>>>>
 // Mirrored by marblehash.py. test_cross_impl.py lifts everything between these two
 // markers out of this file, runs it in node, and compares it with Python on every one
-// of the 366000 possible inputs. Edit this block and that file together, never one alone.
+// of the 279841 codes. Edit this block and that file together, never one alone.
 var SALT = "FAI-HS26-MARBLES";
 var ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ";   /* A to Z without I, L, O. 23, and no digits */
 var ROWS = 100;
 var FIRST_ROW = 6;                          /* the sheet's five header rows sit above */
 var CODE_LEN = 4;
-var DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 function fnv1a32(text) {
   var h = 0x811C9DC5;
@@ -178,32 +186,43 @@ function fnv1a32(text) {
   return h >>> 0;
 }
 
-function normalise(ddmm, ppp) {
-  return SALT + "|" + ddmm + "|" + ppp;
+function normalise(code) {
+  return SALT + "|" + code;
 }
 
-function ddmmIsValid(ddmm) {
-  if (!/^[0-9]{4}$/.test(ddmm)) { return false; }
-  var day = parseInt(ddmm.slice(0, 2), 10);
-  var month = parseInt(ddmm.slice(2), 10);
-  if (month < 1 || month > 12) { return false; }
-  return day >= 1 && day <= DAYS_IN_MONTH[month - 1];
-}
-
-function pppIsValid(ppp) {
-  return /^[0-9]{3}$/.test(ppp);
-}
-
-function assign(ddmm, ppp) {
-  var h = fnv1a32(normalise(ddmm, ppp));
-  var row = FIRST_ROW + (h % ROWS);
-  var q = Math.floor(h / ROWS);
-  var code = "";
-  for (var i = 0; i < CODE_LEN; i++) {
-    code = ALPHABET.charAt(q % ALPHABET.length) + code;
-    q = Math.floor(q / ALPHABET.length);
+/* Printable ASCII only, then upper case, then letters and digits. Digits and the three
+   missing letters survive on purpose, so that YV2M and YVIM come out four characters long
+   and fail on the alphabet rather than on the length. */
+function cleanCode(text) {
+  var out = "";
+  var s = String(text);
+  for (var i = 0; i < s.length; i++) {
+    var ch = s.charAt(i);
+    if (ch >= " " && ch <= "~") { out += ch; }
   }
-  return { row: row, code: code };
+  s = out.toUpperCase();
+  out = "";
+  for (var j = 0; j < s.length; j++) {
+    var c = s.charAt(j);
+    if ((c >= "A" && c <= "Z") || (c >= "0" && c <= "9")) { out += c; }
+  }
+  return out;
+}
+
+function codeIsValid(code) {
+  if (typeof code !== "string" || code.length !== CODE_LEN) { return false; }
+  for (var i = 0; i < CODE_LEN; i++) {
+    if (ALPHABET.indexOf(code.charAt(i)) < 0) { return false; }
+  }
+  return true;
+}
+
+function rowForCode(code) {
+  return FIRST_ROW + (fnv1a32(normalise(code)) % ROWS);
+}
+
+function assign(code) {
+  return { row: rowForCode(code), code: code };
 }
 // <<<<< HASH CORE END <<<<<
 
@@ -212,73 +231,117 @@ function assign(ddmm, ppp) {
 var SHEET_URL = "";
 
 (function () {
+  var STORE_KEY = "fai-hs26-marbles-code";
+
   var form = document.getElementById("form");
-  var ddmmEl = document.getElementById("ddmm");
-  var pppEl = document.getElementById("ppp");
-  var ddmmErr = document.getElementById("ddmm-err");
-  var pppErr = document.getElementById("ppp-err");
+  var codeIn = document.getElementById("code-in");
+  var codeErr = document.getElementById("code-err");
   var result = document.getElementById("result");
 
-  function clean(s) { return s.replace(/[^0-9]/g, ""); }
-
-  function show(el, errEl, message) {
-    errEl.textContent = message;
-    if (message) { el.classList.add("bad"); } else { el.classList.remove("bad"); }
+  /* One random byte. crypto.getRandomValues is a browser built in and reaches no network;
+     Math.random is the fallback for a browser old enough not to have it. */
+  function randomByte() {
+    if (window.crypto && window.crypto.getRandomValues) {
+      var a = new Uint8Array(1);
+      window.crypto.getRandomValues(a);
+      return a[0];
+    }
+    return Math.floor(Math.random() * 256);
   }
 
-  function check() {
-    var ddmm = clean(ddmmEl.value);
-    var ppp = clean(pppEl.value);
-    var ok = true;
-
-    if (ddmm.length === 0) {
-      show(ddmmEl, ddmmErr, "Type the day and month of your birthday, four digits.");
-      ok = false;
-    } else if (ddmm.length !== 4) {
-      show(ddmmEl, ddmmErr, "Four digits please, day first. 7 March is 0703.");
-      ok = false;
-    } else if (!ddmmIsValid(ddmm)) {
-      show(ddmmEl, ddmmErr, "That day and month do not exist. 29 February is fine, 30 February is not.");
-      ok = false;
-    } else {
-      show(ddmmEl, ddmmErr, "");
+  /* Four letters, each one uniform over the alphabet. 256 is not a multiple of 23, so a
+     plain remainder would hand out A, B and C slightly more often than the rest; bytes at
+     or above 11 x 23 = 253 are thrown away instead. */
+  function drawCode() {
+    var n = ALPHABET.length;
+    var limit = 256 - (256 % n);
+    var code = "";
+    for (var i = 0; i < CODE_LEN; i++) {
+      var b = randomByte();
+      while (b >= limit) { b = randomByte(); }
+      code += ALPHABET.charAt(b % n);
     }
+    return code;
+  }
 
-    if (ppp.length === 0) {
-      show(pppEl, pppErr, "Type the last three digits of your mobile number.");
-      ok = false;
-    } else if (!pppIsValid(ppp)) {
-      show(pppEl, pppErr, "Three digits please, the last three of the number.");
-      ok = false;
-    } else {
-      show(pppEl, pppErr, "");
-    }
+  /* Three ways back to the same four letters, so that no single one of them has to hold.
+     The address bar survives a reload with storage switched off, storage survives the tab
+     being closed, and the letters themselves are written in the sheet. */
+  function fromAddress() {
+    return cleanCode(window.location.hash ? window.location.hash.slice(1) : "");
+  }
 
-    if (!ok) {
-      result.classList.remove("on");
-      return;
-    }
+  function fromStore() {
+    try { return cleanCode(window.localStorage.getItem(STORE_KEY) || ""); }
+    catch (e) { return ""; }
+  }
 
-    var out = assign(ddmm, ppp);
+  function remember(code) {
+    try { window.localStorage.setItem(STORE_KEY, code); } catch (e) { /* private window */ }
+    try { window.history.replaceState(null, "", "#" + code); }
+    catch (e) { window.location.hash = code; }
+  }
+
+  function show(message) {
+    codeErr.textContent = message;
+    if (message) { codeIn.classList.add("bad"); } else { codeIn.classList.remove("bad"); }
+  }
+
+  function adopt(code) {
+    var out = assign(code);
     document.getElementById("row-out").textContent = String(out.row);
     document.getElementById("code-out").textContent = out.code;
     document.getElementById("row-inline").textContent = String(out.row);
     document.getElementById("row-inline2").textContent = String(out.row);
     document.getElementById("code-inline").textContent = out.code;
     result.classList.add("on");
+    remember(code);
   }
 
-  form.addEventListener("submit", function (ev) { ev.preventDefault(); check(); });
+  function settle() {
+    var code = fromAddress();
+    if (!codeIsValid(code)) { code = fromStore(); }
+    if (!codeIsValid(code)) { code = drawCode(); }
+    adopt(code);
+  }
+
+  form.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var typed = cleanCode(codeIn.value);
+    if (typed.length === 0) {
+      show("Type the four letters the page gave you.");
+      return;
+    }
+    if (typed.length !== CODE_LEN) {
+      show("Four letters please. Yours is the code you wrote into the sheet.");
+      return;
+    }
+    if (!codeIsValid(typed)) {
+      show("A code is four letters of the alphabet A to Z without I, L and O, and no digits.");
+      return;
+    }
+    show("");
+    codeIn.value = "";
+    adopt(typed);
+    window.scrollTo(0, 0);
+  });
+
+  document.getElementById("redraw").addEventListener("click", function () {
+    show("");
+    codeIn.value = "";
+    adopt(drawCode());
+    window.scrollTo(0, 0);
+  });
 
   /* While somebody is still typing, clear the complaint rather than repeat it. */
-  [[ddmmEl, ddmmErr], [pppEl, pppErr]].forEach(function (pair) {
-    pair[0].addEventListener("input", function () { show(pair[0], pair[1], ""); });
-  });
+  codeIn.addEventListener("input", function () { show(""); });
 
   if (SHEET_URL) {
     document.getElementById("sheeta").href = SHEET_URL;
     document.getElementById("sheetlink").classList.add("on");
   }
+
+  settle();
 })();
 </script>
 </body>

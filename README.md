@@ -10,6 +10,6 @@ pages that participants open on their own devices are published here.
 
 | Path | What it is |
 |---|---|
-| `marble-jar-guessing/` | The page for the marble jar guessing round. Enter the day and month of your birthday and the last three digits of your phone number, and it gives you a row number and a four letter code for the shared sheet. Everything is computed on your own device; nothing is sent anywhere. |
+| `marble-jar-guessing/` | The page for the marble jar guessing round. There is nothing to type and nothing is asked of you: it picks four letters for you, and those four letters are your code and the row of the shared sheet to write your guess in. Everything is computed on your own device; nothing is sent anywhere. |
 
 Served by GitHub Pages at https://carloscotrini.github.io/fai-hs26/
